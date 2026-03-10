@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 import uuid
 
 app = FastAPI(title="Energy Contract Marketplace API")
@@ -69,8 +69,48 @@ contracts = [
 ]
 
 @app.get("/contracts", response_model=List[EnergyContract])
-def get_contracts():
-    return contracts
+def get_contracts(
+    energy_types: Optional[List[str]] = Query(None),
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_quantity: Optional[float] = None,
+    max_quantity: Optional[float] = None,
+    location: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None
+):
+    def to_date(val):
+        if isinstance(val, date):
+            return val
+        return datetime.strptime(val, "%Y-%m-%d").date()
+
+    filtered_contracts = contracts
+
+    if energy_types:
+        filtered_contracts = [c for c in filtered_contracts if c["energy_type"] in energy_types]
+
+    if min_price is not None:
+        filtered_contracts = [c for c in filtered_contracts if c["price_per_mwh"] >= min_price]
+
+    if max_price is not None:
+        filtered_contracts = [c for c in filtered_contracts if c["price_per_mwh"] <= max_price]
+
+    if min_quantity is not None:
+        filtered_contracts = [c for c in filtered_contracts if c["quantity_mwh"] >= min_quantity]
+
+    if max_quantity is not None:
+        filtered_contracts = [c for c in filtered_contracts if c["quantity_mwh"] <= max_quantity]
+
+    if location:
+        filtered_contracts = [c for c in filtered_contracts if location.lower() in c["location"].lower()]
+
+    if start_date:
+        filtered_contracts = [c for c in filtered_contracts if to_date(c["delivery_start"]) >= start_date]
+
+    if end_date:
+        filtered_contracts = [c for c in filtered_contracts if to_date(c["delivery_end"]) <= end_date]
+
+    return filtered_contracts
 
 @app.get("/contracts/{contract_id}", response_model=EnergyContract)
 def get_contract(contract_id: str):
@@ -81,7 +121,7 @@ def get_contract(contract_id: str):
 
 @app.post("/contracts", response_model=EnergyContract)
 def create_contract(contract: ContractCreate):
-    new_contract = contract.dict()
+    new_contract = contract.model_dump()
     new_contract["id"] = str(uuid.uuid4())
     contracts.append(new_contract)
     return new_contract
@@ -92,7 +132,7 @@ def update_contract(contract_id: str, updated_contract: ContractCreate):
     if index is None:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    contracts[index].update(updated_contract.dict())
+    contracts[index].update(updated_contract.model_dump())
     return contracts[index]
 
 @app.delete("/contracts/{contract_id}")
