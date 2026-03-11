@@ -18,6 +18,8 @@ export const useEnergyStore = create(
       minPrice: 0,
       maxPrice: 100,
       location: "",
+      sortBy: "delivery_start",
+      sortOrder: "asc",
       theme: "light",
       toggleTheme: () =>
         set((state) => ({
@@ -32,12 +34,16 @@ export const useEnergyStore = create(
       setMinPrice: (price) => set({ minPrice: price }),
       setMaxPrice: (price) => set({ maxPrice: price }),
       setLocation: (loc) => set({ location: loc }),
+      setSortBy: (field) => set({ sortBy: field }),
+      setSortOrder: (order) => set({ sortOrder: order }),
       resetFilters: () =>
         set({
           selectedEnergyTypes: [],
           minPrice: 0,
           maxPrice: 100,
           location: "",
+          sortBy: "delivery_start",
+          sortOrder: "asc",
         }),
     }),
     {

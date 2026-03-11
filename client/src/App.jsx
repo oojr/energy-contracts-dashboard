@@ -27,9 +27,13 @@ function App() {
     minPrice,
     maxPrice,
     location,
+    sortBy,
+    sortOrder,
     setMinPrice,
     setMaxPrice,
     setLocation,
+    setSortBy,
+    setSortOrder,
     resetFilters,
     theme,
     toggleTheme,
@@ -46,7 +50,7 @@ function App() {
       fetchContracts();
       fetchPortfolio();
     }
-  }, [user, filters, selectedEnergyTypes, minPrice, maxPrice, location]);
+  }, [user, filters, selectedEnergyTypes, minPrice, maxPrice, location, sortBy, sortOrder]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -63,6 +67,8 @@ function App() {
     if (minPrice) params.append("min_price", minPrice);
     if (maxPrice) params.append("max_price", maxPrice);
     if (location) params.append("location", location);
+    if (sortBy) params.append("sort_by", sortBy);
+    if (sortOrder) params.append("sort_order", sortOrder);
     if (filters.min_quantity)
       params.append("min_quantity", filters.min_quantity);
     if (filters.max_quantity)
@@ -169,6 +175,10 @@ function App() {
             setMaxPrice={setMaxPrice}
             location={location}
             setLocation={setLocation}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
             resetFilters={resetFilters}
             setFilters={setFilters}
             setSelectedContract={setSelectedContract}

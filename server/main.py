@@ -77,7 +77,9 @@ def get_contracts(
     max_quantity: Optional[float] = None,
     location: Optional[str] = None,
     start_date: Optional[date] = None,
-    end_date: Optional[date] = None
+    end_date: Optional[date] = None,
+    sort_by: Optional[str] = "delivery_start",
+    sort_order: Optional[str] = "asc"
 ):
     query = supabase.table("contracts").select("*")
 
@@ -97,6 +99,9 @@ def get_contracts(
         query = query.gte("delivery_start", start_date.isoformat())
     if end_date:
         query = query.lte("delivery_end", end_date.isoformat())
+
+    if sort_by:
+        query = query.order(sort_by, desc=(sort_order == "desc"))
 
     response = query.execute()
     return response.data

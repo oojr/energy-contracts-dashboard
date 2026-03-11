@@ -1,4 +1,4 @@
-import { Wallet, Filter, Info, Plus } from "lucide-react";
+import { Wallet, Filter, Info, Plus, ArrowUpDown } from "lucide-react";
 
 export default function Marketplace({
   contracts,
@@ -12,6 +12,10 @@ export default function Marketplace({
   setMaxPrice,
   location,
   setLocation,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
   resetFilters,
   setFilters,
   setSelectedContract,
@@ -29,9 +33,29 @@ export default function Marketplace({
             Explore and reserve available energy contracts.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
-          <Wallet className="w-4 h-4" />{" "}
-          {contracts?.filter((c) => c.status === "Available").length} Available
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 text-sm">
+            <ArrowUpDown className="w-4 h-4 text-gray-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-gray-500 dark:text-gray-400 p-0 text-sm"
+            >
+              <option value="delivery_start">Date</option>
+              <option value="price_per_mwh">Price</option>
+              <option value="quantity_mwh">Quantity</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              className="ml-1 text-xs font-bold text-blue-600 dark:text-blue-400"
+            >
+              {sortOrder.toUpperCase()}
+            </button>
+          </div>
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
+            <Wallet className="w-4 h-4" />{" "}
+            {contracts?.filter((c) => c.status === "Available").length} Available
+          </div>
         </div>
       </div>
 
@@ -115,6 +139,30 @@ export default function Marketplace({
                   placeholder="e.g. Texas"
                   className="w-full bg-gray-50 dark:bg-gray-950 border-none rounded-lg p-2 text-sm mt-1 focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                 />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 block">
+                  Sort By
+                </label>
+                <div className="flex flex-col gap-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-gray-950 border-none rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                  >
+                    <option value="price_per_mwh">Price</option>
+                    <option value="quantity_mwh">Quantity</option>
+                    <option value="delivery_start">Date</option>
+                  </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                  >
+                    <ArrowUpDown className="w-3 h-3" />
+                    {sortOrder === "asc" ? "Ascending" : "Descending"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
