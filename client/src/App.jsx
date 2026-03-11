@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { LayoutDashboard, Wallet, User, LogOut, Filter, X, Plus, Trash2, ShieldCheck } from 'lucide-react';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 function App() {
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [email, setEmail] = useState('test@example.com');
+  const [password, setPassword] = useState('test1234');
+  const [authError, setAuthError] = useState('');
+  const [view, setView] = useState('marketplace'); // 'marketplace' or 'portfolio'
   const [contracts, setContracts] = useState([]);
+  const [portfolio, setPortfolio] = useState({ contracts: [], metrics: null });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     energy_types: [],
     min_price: '',
@@ -15,9 +28,17 @@ function App() {
     end_date: ''
   });
 
-  const energyOptions = ['Solar', 'Wind', 'Nuclear', 'Hydro', 'Geothermal'];
+  const energyOptions = ['Solar', 'Wind', 'Nuclear', 'Hydro', 'Geothermal', 'Natural Gas', 'Coal', 'Oil'];
 
   useEffect(() => {
+    if (user) {
+      fetchContracts();
+      fetchPortfolio();
+    }
+  }, [user, filters]);
+
+  const fetchContracts = () => {
+    if (!token) return;
     const params = new URLSearchParams();
     filters.energy_types.forEach(type => params.append('energy_types', type));
     if (filters.min_price) params.append('min_price', filters.min_price);
@@ -29,216 +50,373 @@ function App() {
     if (filters.end_date) params.append('end_date', filters.end_date);
 
     setLoading(true);
-    fetch(`http://localhost:8000/contracts?${params.toString()}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch contracts');
-        return res.json();
-      })
+    fetch(`/contracts?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
       .then(data => {
         setContracts(data);
         setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
       });
-  }, [filters]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEnergyTypeToggle = (type) => {
-    setFilters(prev => ({
-      ...prev,
-      energy_types: prev.energy_types.includes(type)
-        ? prev.energy_types.filter(t => t !== type)
-        : [...prev.energy_types, type]
-    }));
+  const fetchPortfolio = () => {
+    fetch('/portfolio', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setPortfolio(data));
   };
 
-  const clearFilters = () => {
-    setFilters({
-      energy_types: [],
-      min_price: '',
-      max_price: '',
-      min_quantity: '',
-      max_quantity: '',
-      location: '',
-      start_date: '',
-      end_date: ''
-    });
+  const addToPortfolio = (contractId) => {
+    fetch(`/portfolio/${contractId}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(() => fetchPortfolio());
   };
 
-  if (loading && contracts.length === 0) return <div className="flex justify-center items-center h-screen text-xl">Loading contracts...</div>;
-  if (error) return <div className="flex justify-center items-center h-screen text-xl text-red-600">Error: {error}</div>;
+  const removeFromPortfolio = (contractId) => {
+    fetch(`/portfolio/${contractId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(() => fetchPortfolio());
+  };
 
-  const getStatusClasses = (status) => {
-    switch (status.toLowerCase()) {
-      case 'available': return 'bg-[#e8f5e9] text-[#2e7d32]';
-      case 'sold': return 'bg-[#ffebee] text-[#c62828]';
-      case 'reserved': return 'bg-[#fff3e0] text-[#ef6c00]';
-      default: return '';
+  const login = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Login failed');
+
+      setUser(data.user);
+      setToken(data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.access_token);
+    } catch (err) {
+      setAuthError(err.message);
     }
   };
 
-  return (
-    <div className="max-w-[1200px] mx-auto p-5 font-sans">
-      <header className="text-center mb-10">
-        <h1 className="text-4xl font-bold">Energy Contract Marketplace</h1>
-      </header>
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  };
 
-      <main className="flex flex-col md:flex-row gap-8">
-        <aside className="w-full md:w-64 flex-shrink-0 bg-gray-50 p-4 rounded-lg shadow-sm h-fit">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Filters</h2>
-            <button
-              onClick={clearFilters}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Clear All
-            </button>
+  if (!user) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-blue-100 p-4 rounded-full mb-4">
+              <ShieldCheck className="w-12 h-12 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
+            <p className="text-gray-600 mb-8">Please sign in with your credentials to access the marketplace.</p>
+
+            <form onSubmit={login} className="w-full space-y-4">
+              <div>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              {authError && <p className="text-red-500 text-sm">{authError}</p>}
+              <button
+                type="submit"
+                className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Sign In
+              </button>
+            </form>
+
+            <div className="w-full h-px bg-gray-200 my-6 flex items-center justify-center">
+              <span className="bg-white px-4 text-gray-400 text-sm">CREDENTIALS</span>
+            </div>
+
+            <div className="text-sm text-gray-500">
+              <p>Email: test@example.com</p>
+              <p>Password: test1234</p>
+            </div>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-2">Energy Type</label>
-              <div className="flex flex-wrap gap-2">
-                {energyOptions.map(type => (
-                  <button
-                    key={type}
-                    onClick={() => handleEnergyTypeToggle(type)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      filters.energy_types.includes(type)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-400'
-                    }`}
-                  >
-                    {type}
-                  </button>
+  const chartData = portfolio.metrics?.breakdown_by_type ?
+    Object.entries(portfolio.metrics.breakdown_by_type).map(([name, value]) => ({ name, value })) : [];
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Sidebar */}
+      <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-6">
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <LayoutDashboard className="text-blue-600" />
+            EnerTrade
+          </h1>
+        </div>
+
+        <nav className="flex-grow p-4 space-y-2">
+          <button
+            onClick={() => setView('marketplace')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${view === 'marketplace' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            <Wallet className="w-5 h-5" /> Marketplace
+          </button>
+          <button
+            onClick={() => setView('portfolio')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${view === 'portfolio' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            <LayoutDashboard className="w-5 h-5" /> My Portfolio
+          </button>
+        </nav>
+
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex items-center gap-3 px-4 py-3 text-gray-600">
+            <User className="w-5 h-5" />
+            <div className="flex-grow overflow-hidden">
+              <p className="text-sm font-medium truncate">{user.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors mt-2"
+          >
+            <LogOut className="w-5 h-5" /> Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-grow p-4 md:p-8 overflow-y-auto h-screen">
+        {view === 'marketplace' ? (
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h2 className="text-3xl font-bold">Contract Marketplace</h2>
+                <p className="text-gray-500">Explore and reserve available energy contracts.</p>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm text-gray-500">
+                <Wallet className="w-4 h-4" /> {contracts.filter(c => c.status === 'Available').length} Available
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              {/* Filters */}
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold flex items-center gap-2"><Filter className="w-4 h-4" /> Filters</h3>
+                    <button onClick={() => setFilters({
+                      energy_types: [],
+                      min_price: '',
+                      max_price: '',
+                      min_quantity: '',
+                      max_quantity: '',
+                      location: '',
+                      start_date: '',
+                      end_date: ''
+                    })} className="text-xs text-blue-600 hover:underline">Reset</button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Energy Type</label>
+                      <div className="flex flex-wrap gap-2">
+                        {energyOptions.map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setFilters(f => ({ ...f, energy_types: f.energy_types.includes(t) ? f.energy_types.filter(x => x !== t) : [...f.energy_types, t] }))}
+                            className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${filters.energy_types.includes(t) ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Min Price</label>
+                        <input type="number" value={filters.min_price} onChange={e => setFilters(f => ({ ...f, min_price: e.target.value }))} className="w-full bg-gray-50 border-none rounded-lg p-2 text-sm mt-1 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Max Price</label>
+                        <input type="number" value={filters.max_price} onChange={e => setFilters(f => ({ ...f, max_price: e.target.value }))} className="w-full bg-gray-50 border-none rounded-lg p-2 text-sm mt-1 focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Location</label>
+                      <input type="text" value={filters.location} onChange={e => setFilters(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Texas" className="w-full bg-gray-50 border-none rounded-lg p-2 text-sm mt-1 focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contracts Grid */}
+              <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {loading ? (
+                  <div className="col-span-full flex justify-center py-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : contracts.map(c => (
+                  <div key={c.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="font-bold text-xl">{c.energy_type}</h4>
+                        <p className="text-gray-400 text-sm">{c.location}</p>
+                      </div>
+                      <span className={`px-3 py-1 text-[10px] font-bold uppercase rounded-full tracking-wider ${
+                        c.status === 'Available' ? 'bg-green-50 text-green-600' :
+                        c.status === 'Reserved' ? 'bg-amber-50 text-amber-600' :
+                        'bg-red-50 text-red-600'
+                      }`}>
+                        {c.status}
+                      </span>
+                    </div>
+                    <div className="space-y-2 mb-6">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Quantity</span>
+                        <span className="font-semibold">{c.quantity_mwh} MWh</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Price</span>
+                        <span className="font-semibold">${c.price_per_mwh}/MWh</span>
+                      </div>
+                      <div className="flex justify-between text-sm pt-2 border-t border-gray-50">
+                        <span className="text-gray-400 text-xs italic">{c.delivery_start} - {c.delivery_end}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addToPortfolio(c.id)}
+                      disabled={c.status !== 'Available' || portfolio.contracts.some(pc => pc.id === c.id)}
+                      className="mt-auto flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold transition-all bg-gray-900 text-white hover:bg-gray-800 disabled:bg-gray-100 disabled:text-gray-400"
+                    >
+                      <Plus className="w-4 h-4" /> {
+                        portfolio.contracts.some(pc => pc.id === c.id) ? 'In Portfolio' :
+                        c.status !== 'Available' ? c.status : 'Add to Portfolio'
+                      }
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs text-gray-500">Min Price</label>
-                <input
-                  type="number"
-                  name="min_price"
-                  value={filters.min_price}
-                  onChange={handleFilterChange}
-                  placeholder="Min"
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500">Max Price</label>
-                <input
-                  type="number"
-                  name="max_price"
-                  value={filters.max_price}
-                  onChange={handleFilterChange}
-                  placeholder="Max"
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs text-gray-500">Min Qty (MWh)</label>
-                <input
-                  type="number"
-                  name="min_quantity"
-                  value={filters.min_quantity}
-                  onChange={handleFilterChange}
-                  placeholder="Min"
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500">Max Qty (MWh)</label>
-                <input
-                  type="number"
-                  name="max_quantity"
-                  value={filters.max_quantity}
-                  onChange={handleFilterChange}
-                  placeholder="Max"
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={filters.location}
-                onChange={handleFilterChange}
-                placeholder="Search location..."
-                className="w-full p-2 border border-gray-300 rounded text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Delivery Range</label>
-              <div className="space-y-2">
-                <input
-                  type="date"
-                  name="start_date"
-                  value={filters.start_date}
-                  onChange={handleFilterChange}
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                />
-                <input
-                  type="date"
-                  name="end_date"
-                  value={filters.end_date}
-                  onChange={handleFilterChange}
-                  className="w-full p-2 border border-gray-300 rounded text-sm"
-                />
-              </div>
-            </div>
           </div>
-        </aside>
+        ) : (
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold">My Portfolio</h2>
+              <p className="text-gray-500">Real-time metrics and contract management.</p>
+            </div>
 
-        <div className="flex-grow">
-          <div className="mb-4 text-gray-600">
-            Found <strong>{contracts.length}</strong> contract{contracts.length !== 1 ? 's' : ''}
-          </div>
-          <div className={`grid grid-cols-1 xl:grid-cols-2 gap-5 transition-opacity duration-200 ${loading ? 'opacity-50' : 'opacity-100'}`}>
-            {contracts.map(contract => (
-              <div key={contract.id} className="bg-white rounded-xl shadow-md p-5 flex flex-col text-[#333] transition-transform duration-200 hover:-translate-y-1">
-                <div className="flex justify-between items-center mb-4 border-b border-[#eee] pb-2.5">
-                  <span className="font-bold text-[1.2rem] text-[#2c3e50]">{contract.energy_type}</span>
-                  <span className={`px-3 py-1 rounded-[20px] text-[0.8rem] uppercase font-bold ${getStatusClasses(contract.status)}`}>
-                    {contract.status}
-                  </span>
+            {portfolio.contracts.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-300">
+                <Wallet className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                <h3 className="text-xl font-bold mb-2">Your portfolio is empty</h3>
+                <p className="text-gray-400 mb-6">Start adding contracts from the marketplace to build your energy strategy.</p>
+                <button onClick={() => setView('marketplace')} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors">View Marketplace</button>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Metrics Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Capacity</p>
+                    <p className="text-2xl font-bold">{portfolio.metrics?.total_capacity_mwh?.toLocaleString()} <span className="text-sm font-medium text-gray-400">MWh</span></p>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Cost</p>
+                    <p className="text-2xl font-bold">${portfolio.metrics?.total_cost?.toLocaleString()} <span className="text-sm font-medium text-gray-400">USD</span></p>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Avg Price</p>
+                    <p className="text-2xl font-bold">${portfolio.metrics?.average_price_per_mwh?.toFixed(2)} <span className="text-sm font-medium text-gray-400">/MWh</span></p>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Contracts</p>
+                    <p className="text-2xl font-bold">{portfolio.metrics?.total_contracts}</p>
+                  </div>
                 </div>
-                <div className="flex-grow">
-                  <p className="my-2 text-[0.95rem]"><strong>Quantity:</strong> {contract.quantity_mwh} MWh</p>
-                  <p className="my-2 text-[0.95rem]"><strong>Price:</strong> ${contract.price_per_mwh}/MWh</p>
-                  <p className="my-2 text-[0.95rem]"><strong>Location:</strong> {contract.location}</p>
-                  <p className="my-2 text-[0.95rem]"><strong>Duration:</strong> {contract.delivery_start} to {contract.delivery_end}</p>
-                </div>
-                <div className="mt-auto pt-5">
-                  <button
-                    className="w-full p-2.5 border-none rounded-md bg-[#3498db] text-white font-bold cursor-pointer disabled:bg-[#bdc3c7] disabled:cursor-not-allowed"
-                    disabled={contract.status !== 'Available'}
-                  >
-                    {contract.status === 'Available' ? 'Reserve Now' : 'Not Available'}
-                  </button>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Contracts List */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <h3 className="font-bold flex items-center gap-2"><Wallet className="w-5 h-5 text-blue-600" /> Selected Contracts</h3>
+                    {portfolio.contracts.map(c => (
+                      <div key={c.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center font-bold text-blue-600">{c.energy_type[0]}</div>
+                          <div>
+                            <h4 className="font-bold">{c.energy_type}</h4>
+                            <p className="text-gray-400 text-xs">{c.location} • {c.quantity_mwh} MWh</p>
+                          </div>
+                        </div>
+                        <div className="text-right flex items-center gap-8">
+                          <div>
+                            <p className="font-bold">${(c.quantity_mwh * c.price_per_mwh).toLocaleString()}</p>
+                            <p className="text-gray-400 text-xs">${c.price_per_mwh}/MWh</p>
+                          </div>
+                          <button onClick={() => removeFromPortfolio(c.id)} className="p-2 text-gray-300 hover:text-red-500 transition-colors"><Trash2 className="w-5 h-5" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Visual Breakdown */}
+                  <div className="space-y-4">
+                    <h3 className="font-bold">Energy Breakdown</h3>
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
 }
 
-export default App
+export default App;
