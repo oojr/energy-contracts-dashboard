@@ -6,6 +6,7 @@ import Marketplace from "./components/Marketplace";
 import Portfolio from "./components/Portfolio";
 import PriceTrends from "./components/PriceTrends";
 import ContractModal from "./components/ContractModal";
+import ComparisonModal from "./components/ComparisonModal";
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -22,6 +23,7 @@ function App() {
   const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedContract, setSelectedContract] = useState(null);
+  const [showComparison, setShowComparison] = useState(false);
   const {
     energyOptions,
     selectedEnergyTypes,
@@ -39,6 +41,9 @@ function App() {
     resetFilters,
     theme,
     toggleTheme,
+    comparisonList,
+    toggleComparison,
+    clearComparison,
   } = useEnergyStore();
   const [filters, setFilters] = useState({
     min_quantity: "",
@@ -53,7 +58,16 @@ function App() {
       fetchPortfolio();
       fetchTrends();
     }
-  }, [user, filters, selectedEnergyTypes, minPrice, maxPrice, location, sortBy, sortOrder]);
+  }, [
+    user,
+    filters,
+    selectedEnergyTypes,
+    minPrice,
+    maxPrice,
+    location,
+    sortBy,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -205,6 +219,9 @@ function App() {
             setSelectedContract={setSelectedContract}
             addToPortfolio={addToPortfolio}
             portfolio={portfolio}
+            comparisonList={comparisonList}
+            toggleComparison={toggleComparison}
+            setShowComparison={setShowComparison}
           />
         ) : view === "portfolio" ? (
           <Portfolio
@@ -214,16 +231,22 @@ function App() {
             markContractAsSold={markContractAsSold}
           />
         ) : (
-          <PriceTrends
-            trends={trends}
-            energyOptions={energyOptions}
-          />
+          <PriceTrends trends={trends} energyOptions={energyOptions} />
         )}
       </main>
 
       <ContractModal
         selectedContract={selectedContract}
         setSelectedContract={setSelectedContract}
+        addToPortfolio={addToPortfolio}
+        portfolio={portfolio}
+      />
+
+      <ComparisonModal
+        isOpen={showComparison}
+        onClose={() => setShowComparison(false)}
+        contracts={comparisonList}
+        clearComparison={clearComparison}
         addToPortfolio={addToPortfolio}
         portfolio={portfolio}
       />

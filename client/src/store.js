@@ -20,6 +20,7 @@ export const useEnergyStore = create(
       location: "",
       sortBy: "delivery_start",
       sortOrder: "asc",
+      comparisonList: [],
       theme: "light",
       toggleTheme: () =>
         set((state) => ({
@@ -36,6 +37,18 @@ export const useEnergyStore = create(
       setLocation: (loc) => set({ location: loc }),
       setSortBy: (field) => set({ sortBy: field }),
       setSortOrder: (order) => set({ sortOrder: order }),
+      toggleComparison: (contract) =>
+        set((state) => {
+          const exists = state.comparisonList.find((c) => c.id === contract.id);
+          if (exists) {
+            return {
+              comparisonList: state.comparisonList.filter((c) => c.id !== contract.id),
+            };
+          }
+          if (state.comparisonList.length >= 3) return state;
+          return { comparisonList: [...state.comparisonList, contract] };
+        }),
+      clearComparison: () => set({ comparisonList: [] }),
       resetFilters: () =>
         set({
           selectedEnergyTypes: [],
