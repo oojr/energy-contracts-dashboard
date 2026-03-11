@@ -1,9 +1,9 @@
-import { Wallet, Trash2 } from "lucide-react";
+import { Wallet, Trash2, CheckCircle2 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
-export default function Portfolio({ portfolio, setView, removeFromPortfolio }) {
+export default function Portfolio({ portfolio, setView, removeFromPortfolio, markContractAsSold }) {
   const chartData = portfolio.metrics?.breakdown_by_type
     ? Object.entries(portfolio.metrics.breakdown_by_type).map(([name, value]) => ({
         name,
@@ -115,8 +115,18 @@ export default function Portfolio({ portfolio, setView, removeFromPortfolio }) {
                         ${c.price_per_mwh}/MWh
                       </p>
                     </div>
+                    {c.status !== "Sold" && (
+                      <button
+                        onClick={() => markContractAsSold(c.id)}
+                        title="Mark as Sold"
+                        className="p-2 text-gray-300 dark:text-gray-600 hover:text-green-500 transition-colors"
+                      >
+                        <CheckCircle2 className="w-5 h-5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => removeFromPortfolio(c.id)}
+                      title="Remove from Portfolio"
                       className="p-2 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="w-5 h-5" />

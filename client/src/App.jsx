@@ -120,6 +120,16 @@ function App() {
     }).then(() => fetchPortfolio());
   };
 
+  const markContractAsSold = (contractId) => {
+    fetch(`/contracts/${contractId}/sell`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(() => {
+      fetchPortfolio();
+      fetchContracts();
+    });
+  };
+
   const login = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -201,6 +211,7 @@ function App() {
             portfolio={portfolio}
             setView={setView}
             removeFromPortfolio={removeFromPortfolio}
+            markContractAsSold={markContractAsSold}
           />
         ) : (
           <PriceTrends
