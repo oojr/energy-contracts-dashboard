@@ -94,7 +94,7 @@ function App() {
     if (filters.end_date) params.append("end_date", filters.end_date);
 
     setLoading(true);
-    fetch(`/contracts?${params.toString()}`, {
+    fetch(`/api/contracts?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -105,7 +105,7 @@ function App() {
   };
 
   const fetchPortfolio = () => {
-    fetch("/portfolio", {
+    fetch("/api/portfolio", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -113,7 +113,7 @@ function App() {
   };
 
   const fetchTrends = () => {
-    fetch("/contracts/trends", {
+    fetch("/api/contracts/trends", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -121,21 +121,21 @@ function App() {
   };
 
   const addToPortfolio = (contractId) => {
-    fetch(`/portfolio/${contractId}`, {
+    fetch(`/api/portfolio/${contractId}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     }).then(() => fetchPortfolio());
   };
 
   const removeFromPortfolio = (contractId) => {
-    fetch(`/portfolio/${contractId}`, {
+    fetch(`/api/portfolio/${contractId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }).then(() => fetchPortfolio());
   };
 
   const markContractAsSold = (contractId) => {
-    fetch(`/contracts/${contractId}/sell`, {
+    fetch(`/api/contracts/${contractId}/sell`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     }).then(() => {
@@ -148,7 +148,7 @@ function App() {
     e.preventDefault();
     setAuthError("");
     try {
-      const response = await fetch("/login", {
+      const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

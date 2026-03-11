@@ -1,6 +1,13 @@
 import { ShieldCheck } from "lucide-react";
 
-export default function Login({ email, setEmail, password, setPassword, login, authError }) {
+export default function Login({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  login,
+  authError,
+}) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-2xl p-8 max-w-md w-full">
@@ -47,7 +54,7 @@ export default function Login({ email, setEmail, password, setPassword, login, a
 
           <div className="w-full h-px bg-gray-200 dark:bg-gray-800 my-6 flex items-center justify-center">
             <span className="bg-white dark:bg-gray-900 px-4 text-gray-600 dark:text-gray-400 text-sm font-medium">
-              CREDENTIALS
+              TEST CREDENTIALS
             </span>
           </div>
 
