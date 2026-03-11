@@ -3,18 +3,18 @@ from database import supabase
 from datetime import date, timedelta
 
 contracts = [
-    {"energy_type": "Solar", "quantity_mwh": 500, "price_per_mwh": 45.50, "delivery_start": "2026-03-01", "delivery_end": "2026-05-31", "location": "California", "status": "Available"},
-    {"energy_type": "Wind", "quantity_mwh": 1200, "price_per_mwh": 38.75, "delivery_start": "2026-04-01", "delivery_end": "2026-09-30", "location": "Texas", "status": "Sold"},
-    {"energy_type": "Natural Gas", "quantity_mwh": 800, "price_per_mwh": 52.00, "delivery_start": "2026-02-15", "delivery_end": "2026-08-15", "location": "Northeast", "status": "Reserved"},
-    {"energy_type": "Nuclear", "quantity_mwh": 2000, "price_per_mwh": 65.00, "delivery_start": "2026-01-01", "delivery_end": "2026-12-31", "location": "Illinois", "status": "Available"},
-    {"energy_type": "Hydro", "quantity_mwh": 1500, "price_per_mwh": 42.25, "delivery_start": "2026-05-01", "delivery_end": "2026-10-31", "location": "Washington", "status": "Available"},
-    {"energy_type": "Coal", "quantity_mwh": 2500, "price_per_mwh": 32.00, "delivery_start": "2026-01-01", "delivery_end": "2026-12-31", "location": "West Virginia", "status": "Sold"},
-    {"energy_type": "Solar", "quantity_mwh": 350, "price_per_mwh": 48.00, "delivery_start": "2026-06-01", "delivery_end": "2026-08-31", "location": "Arizona", "status": "Available"},
-    {"energy_type": "Wind", "quantity_mwh": 900, "price_per_mwh": 40.50, "delivery_start": "2026-03-15", "delivery_end": "2026-06-15", "location": "Iowa", "status": "Reserved"},
-    {"energy_type": "Geothermal", "quantity_mwh": 250, "price_per_mwh": 55.00, "delivery_start": "2026-01-01", "delivery_end": "2026-12-31", "location": "Nevada", "status": "Available"},
-    {"energy_type": "Coal", "quantity_mwh": 1800, "price_per_mwh": 34.50, "delivery_start": "2026-03-01", "delivery_end": "2026-08-31", "location": "Kentucky", "status": "Available"},
-    {"energy_type": "Solar", "quantity_mwh": 600, "price_per_mwh": 44.00, "delivery_start": "2026-04-01", "delivery_end": "2026-07-31", "location": "Florida", "status": "Available"},
-    {"energy_type": "Wind", "quantity_mwh": 1100, "price_per_mwh": 39.25, "delivery_start": "2026-05-15", "delivery_end": "2026-11-15", "location": "Oklahoma", "status": "Sold"},
+    {"energy_type": "Solar", "quantity_mwh": 500, "price_per_mwh": 45.50, "delivery_start": "2026-03-01", "delivery_end": "2026-05-31", "location": "California", "status": "Available", "provider": "SunPower Systems", "description": "High-efficiency photovoltaic panels from the Mojave desert installations.", "carbon_intensity": 12.5},
+    {"energy_type": "Wind", "quantity_mwh": 1200, "price_per_mwh": 38.75, "delivery_start": "2026-04-01", "delivery_end": "2026-09-30", "location": "Texas", "status": "Sold", "provider": "Vesta Wind Tech", "description": "Offshore wind farm energy with high reliability during seasonal peaks.", "carbon_intensity": 11.0},
+    {"energy_type": "Natural Gas", "quantity_mwh": 800, "price_per_mwh": 52.00, "delivery_start": "2026-02-15", "delivery_end": "2026-08-15", "location": "Northeast", "status": "Reserved", "provider": "Atlantic Gas & Electric", "description": "Stable transition fuel source with high dispatchability.", "carbon_intensity": 490.0},
+    {"energy_type": "Nuclear", "quantity_mwh": 2000, "price_per_mwh": 65.00, "delivery_start": "2026-01-01", "delivery_end": "2026-12-31", "location": "Illinois", "status": "Available", "provider": "Exelon Generation", "description": "Zero-carbon baseload power providing continuous energy security.", "carbon_intensity": 12.0},
+    {"energy_type": "Hydro", "quantity_mwh": 1500, "price_per_mwh": 42.25, "delivery_start": "2026-05-01", "delivery_end": "2026-10-31", "location": "Washington", "status": "Available", "provider": "Pacific Northwest Power", "description": "Run-of-river hydroelectricity with minimal environmental impact.", "carbon_intensity": 4.0},
+    {"energy_type": "Coal", "quantity_mwh": 2500, "price_per_mwh": 32.00, "delivery_start": "2026-01-01", "delivery_end": "2026-12-31", "location": "West Virginia", "status": "Sold", "provider": "Appalachian Mining Co.", "description": "High-calorific coal for steady industrial baseline power.", "carbon_intensity": 950.0},
+    {"energy_type": "Solar", "quantity_mwh": 350, "price_per_mwh": 48.00, "delivery_start": "2026-06-01", "delivery_end": "2026-08-31", "location": "Arizona", "status": "Available", "provider": "Desert Sun Energy", "description": "Concentrated solar power from modern salt-storage facilities.", "carbon_intensity": 18.0},
+    {"energy_type": "Wind", "quantity_mwh": 900, "price_per_mwh": 40.50, "delivery_start": "2026-03-15", "delivery_end": "2026-06-15", "location": "Iowa", "status": "Reserved", "provider": "Prairie Winds", "description": "Midwest wind farm energy providing low-cost renewable power.", "carbon_intensity": 11.5},
+    {"energy_type": "Geothermal", "quantity_mwh": 250, "price_per_mwh": 55.00, "delivery_start": "2026-01-01", "delivery_end": "2026-12-31", "location": "Nevada", "status": "Available", "provider": "EarthHeat Dynamics", "description": "Constant baseload geothermal power with 98% uptime.", "carbon_intensity": 38.0},
+    {"energy_type": "Coal", "quantity_mwh": 1800, "price_per_mwh": 34.50, "delivery_start": "2026-03-01", "delivery_end": "2026-08-31", "location": "Kentucky", "status": "Available", "provider": "Bluegrass Energy", "description": "Regional coal supply for critical infrastructure reliability.", "carbon_intensity": 980.0},
+    {"energy_type": "Solar", "quantity_mwh": 600, "price_per_mwh": 44.00, "delivery_start": "2026-04-01", "delivery_end": "2026-07-31", "location": "Florida", "status": "Available", "provider": "Sunshine State Solar", "description": "Coastal solar arrays optimized for high tropical irradiance.", "carbon_intensity": 14.2},
+    {"energy_type": "Wind", "quantity_mwh": 1100, "price_per_mwh": 39.25, "delivery_start": "2026-05-15", "delivery_end": "2026-11-15", "location": "Oklahoma", "status": "Sold", "provider": "Sooner Wind", "description": "Plains wind energy with high capacity factor turbines.", "carbon_intensity": 10.8},
     {"energy_type": "Natural Gas", "quantity_mwh": 750, "price_per_mwh": 51.50, "delivery_start": "2026-03-01", "delivery_end": "2026-09-30", "location": "Ohio", "status": "Available"},
     {"energy_type": "Hydro", "quantity_mwh": 1300, "price_per_mwh": 41.75, "delivery_start": "2026-04-01", "delivery_end": "2026-08-31", "location": "Oregon", "status": "Reserved"},
     {"energy_type": "Solar", "quantity_mwh": 450, "price_per_mwh": 46.50, "delivery_start": "2026-02-01", "delivery_end": "2026-05-31", "location": "Georgia", "status": "Available"},
@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS contracts (
     delivery_end DATE NOT NULL,
     location TEXT NOT NULL,
     status TEXT DEFAULT 'Available',
+    provider TEXT,
+    description TEXT,
+    carbon_intensity NUMERIC,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

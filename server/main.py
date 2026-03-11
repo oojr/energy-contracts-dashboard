@@ -16,8 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class EnergyContract(BaseModel):
-    id: str
+class ContractBase(BaseModel):
     energy_type: str
     quantity_mwh: float
     price_per_mwh: float
@@ -25,6 +24,12 @@ class EnergyContract(BaseModel):
     delivery_end: date
     location: str
     status: str
+    provider: Optional[str] = None
+    description: Optional[str] = None
+    carbon_intensity: Optional[float] = None
+
+class EnergyContract(ContractBase):
+    id: str
 
 class PortfolioItem(BaseModel):
     id: str
@@ -39,13 +44,7 @@ class PortfolioMetrics(BaseModel):
     avg_price_per_mwh: float
     breakdown: dict
 
-class ContractCreate(BaseModel):
-    energy_type: str
-    quantity_mwh: float
-    price_per_mwh: float
-    delivery_start: date
-    delivery_end: date
-    location: str
+class ContractCreate(ContractBase):
     status: str = "Available"
 
 class LoginRequest(BaseModel):
