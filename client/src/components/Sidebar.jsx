@@ -1,4 +1,4 @@
-import { Zap, Moon, Sun, Wallet, LayoutDashboard, User, LogOut } from "lucide-react";
+import { Zap, Moon, Sun, Wallet, LayoutDashboard, User, LogOut, TrendingUp } from "lucide-react";
 
 export default function Sidebar({ view, setView, theme, toggleTheme, user, logout }) {
   return (
@@ -41,6 +41,16 @@ export default function Sidebar({ view, setView, theme, toggleTheme, user, logou
           }`}
         >
           <LayoutDashboard className="w-5 h-5" /> My Portfolio
+        </button>
+        <button
+          onClick={() => setView("trends")}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+            view === "trends"
+              ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+          }`}
+        >
+          <TrendingUp className="w-5 h-5" /> Price Trends
         </button>
       </nav>
 

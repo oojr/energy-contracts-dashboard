@@ -4,6 +4,7 @@ import Login from "./components/Login";
 import Sidebar from "./components/Sidebar";
 import Marketplace from "./components/Marketplace";
 import Portfolio from "./components/Portfolio";
+import PriceTrends from "./components/PriceTrends";
 import ContractModal from "./components/ContractModal";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
   const [view, setView] = useState("marketplace"); // 'marketplace' or 'portfolio'
   const [contracts, setContracts] = useState([]);
   const [portfolio, setPortfolio] = useState({ contracts: [], metrics: null });
+  const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedContract, setSelectedContract] = useState(null);
   const {
@@ -49,6 +51,7 @@ function App() {
     if (user) {
       fetchContracts();
       fetchPortfolio();
+      fetchTrends();
     }
   }, [user, filters, selectedEnergyTypes, minPrice, maxPrice, location, sortBy, sortOrder]);
 
@@ -93,6 +96,14 @@ function App() {
     })
       .then((res) => res.json())
       .then((data) => setPortfolio(data));
+  };
+
+  const fetchTrends = () => {
+    fetch("/contracts/trends", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setTrends(data));
   };
 
   const addToPortfolio = (contractId) => {
@@ -185,11 +196,16 @@ function App() {
             addToPortfolio={addToPortfolio}
             portfolio={portfolio}
           />
-        ) : (
+        ) : view === "portfolio" ? (
           <Portfolio
             portfolio={portfolio}
             setView={setView}
             removeFromPortfolio={removeFromPortfolio}
+          />
+        ) : (
+          <PriceTrends
+            trends={trends}
+            energyOptions={energyOptions}
           />
         )}
       </main>

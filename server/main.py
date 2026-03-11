@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Query, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import date, datetime
+from typing import List, Optional, Dict
+from datetime import date, datetime, timedelta
 import uuid
 from database import supabase
 
@@ -66,6 +66,38 @@ def get_current_user(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail=str(e))
 
 
+
+@app.get("/contracts/trends")
+def get_price_trends(user: any = Depends(get_current_user)):
+    # Fetch all contracts to compute trends
+    response = supabase.table("contracts").select("energy_type, price_per_mwh, delivery_start").execute()
+    data = response.data
+
+    # Group by month and energy type
+    trends = {}
+    for item in data:
+        # Format date to YYYY-MM for monthly grouping
+        dt = datetime.strptime(item["delivery_start"], "%Y-%m-%d")
+        month = dt.strftime("%Y-%m")
+        etype = item["energy_type"]
+
+        if month not in trends:
+            trends[month] = {}
+        if etype not in trends[month]:
+            trends[month][etype] = []
+
+        trends[month][etype].append(item["price_per_mwh"])
+
+    # Calculate averages
+    result = []
+    sorted_months = sorted(trends.keys())
+    for month in sorted_months:
+        entry = {"month": month}
+        for etype, prices in trends[month].items():
+            entry[etype] = sum(prices) / len(prices)
+        result.append(entry)
+
+    return result
 
 @app.get("/contracts", response_model=List[EnergyContract])
 def get_contracts(
