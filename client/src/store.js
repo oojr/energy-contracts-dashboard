@@ -42,7 +42,9 @@ export const useEnergyStore = create(
           const exists = state.comparisonList.find((c) => c.id === contract.id);
           if (exists) {
             return {
-              comparisonList: state.comparisonList.filter((c) => c.id !== contract.id),
+              comparisonList: state.comparisonList?.filter(
+                (c) => c.id !== contract.id,
+              ),
             };
           }
           if (state.comparisonList.length >= 3) return state;
