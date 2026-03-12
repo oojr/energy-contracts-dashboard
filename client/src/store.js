@@ -29,7 +29,7 @@ export const useEnergyStore = create(
       toggleEnergyType: (type) =>
         set((state) => ({
           selectedEnergyTypes: state.selectedEnergyTypes.includes(type)
-            ? state.selectedEnergyTypes.filter((t) => t !== type)
+            ? state.selectedEnergyTypes?.filter((t) => t !== type)
             : [...state.selectedEnergyTypes, type],
         })),
       setMinPrice: (price) => set({ minPrice: price }),
