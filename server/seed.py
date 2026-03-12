@@ -1,5 +1,5 @@
 import uuid
-from database import supabase
+from database import get_supabase
 from datetime import date, timedelta
 
 contracts = [
@@ -23,6 +23,7 @@ contracts = [
 ]
 
 def seed():
+    supabase = get_supabase()
     print("--- Energy Marketplace Seeding Utility ---")
 
     # Check for tables existence and seed contracts if empty

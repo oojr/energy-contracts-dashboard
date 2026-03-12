@@ -52,6 +52,14 @@ function App() {
     end_date: "",
   });
 
+  const handleResponse = (res) => {
+    if (res.status === 401) {
+      logout();
+      return null;
+    }
+    return res.json();
+  };
+
   useEffect(() => {
     if (user) {
       fetchPortfolio();
@@ -103,9 +111,9 @@ function App() {
     fetch(`/api/contracts?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
+      .then(handleResponse)
       .then((data) => {
-        setContracts(Array.isArray(data) ? data : []);
+        if (data) setContracts(Array.isArray(data) ? data : []);
         setLoading(false);
       });
   };
@@ -114,39 +122,52 @@ function App() {
     fetch("/api/portfolio", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then((data) => setPortfolio(data));
+      .then(handleResponse)
+      .then((data) => {
+        if (data) setPortfolio(data);
+      });
   };
 
   const fetchTrends = () => {
     fetch("/api/contracts/trends", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then((data) => setTrends(Array.isArray(data) ? data : []));
+      .then(handleResponse)
+      .then((data) => {
+        if (data) setTrends(Array.isArray(data) ? data : []);
+      });
   };
 
   const addToPortfolio = (contractId) => {
     fetch(`/api/portfolio/${contractId}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-    }).then(() => fetchPortfolio());
+    }).then((res) => {
+      if (res.status === 401) logout();
+      else fetchPortfolio();
+    });
   };
 
   const removeFromPortfolio = (contractId) => {
     fetch(`/api/portfolio/${contractId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
-    }).then(() => fetchPortfolio());
+    }).then((res) => {
+      if (res.status === 401) logout();
+      else fetchPortfolio();
+    });
   };
 
   const markContractAsSold = (contractId) => {
     fetch(`/api/contracts/${contractId}/sell`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-    }).then(() => {
-      fetchPortfolio();
-      fetchContracts();
+    }).then((res) => {
+      if (res.status === 401) logout();
+      else {
+        fetchPortfolio();
+        fetchContracts();
+      }
     });
   };
 

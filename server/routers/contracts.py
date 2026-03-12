@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 from datetime import date, datetime
-from database import supabase
+from database import get_supabase
 from models import EnergyContract, ContractCreate
 from auth import get_current_user
 
@@ -9,6 +9,7 @@ router = APIRouter(prefix="/contracts", tags=["contracts"])
 
 @router.get("/trends")
 def get_price_trends(user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     response = supabase.table("contracts").select("energy_type, price_per_mwh, delivery_start").execute()
     data = response.data
 
@@ -49,6 +50,7 @@ def get_contracts(
     sort_by: Optional[str] = "delivery_start",
     sort_order: Optional[str] = "asc"
 ):
+    supabase = get_supabase()
     query = supabase.table("contracts").select("*")
 
     if energy_types:
@@ -76,6 +78,7 @@ def get_contracts(
 
 @router.get("/{contract_id}", response_model=EnergyContract)
 def get_contract(contract_id: str, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     response = supabase.table("contracts").select("*").eq("id", contract_id).single().execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Contract not found")
@@ -83,11 +86,13 @@ def get_contract(contract_id: str, user: any = Depends(get_current_user)):
 
 @router.post("", response_model=EnergyContract)
 def create_contract(contract: ContractCreate, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     response = supabase.table("contracts").insert(contract.model_dump()).execute()
     return response.data[0]
 
 @router.put("/{contract_id}", response_model=EnergyContract)
 def update_contract(contract_id: str, updated_contract: ContractCreate, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     response = supabase.table("contracts").update(updated_contract.model_dump()).eq("id", contract_id).execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Contract not found")
@@ -95,11 +100,13 @@ def update_contract(contract_id: str, updated_contract: ContractCreate, user: an
 
 @router.delete("/{contract_id}")
 def delete_contract(contract_id: str, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     response = supabase.table("contracts").delete().eq("id", contract_id).execute()
     return {"message": "Contract deleted"}
 
 @router.post("/{contract_id}/sell", response_model=EnergyContract)
 def sell_contract(contract_id: str, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     response = supabase.table("contracts").update({"status": "Sold"}).eq("id", contract_id).execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Contract not found")

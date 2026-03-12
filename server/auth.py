@@ -1,8 +1,9 @@
 from fastapi import HTTPException, Header, Depends
 from typing import Optional
-from database import supabase
+from database import get_supabase
 
 def get_current_user(authorization: Optional[str] = Header(None)):
+    supabase = get_supabase()
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid or missing authorization header")
 

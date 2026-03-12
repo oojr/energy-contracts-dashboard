@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
-from database import supabase
+from database import get_supabase
 from auth import get_current_user
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
 
 @router.post("/{contract_id}")
 def add_to_portfolio(contract_id: str, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = user.id
     existing = supabase.table("portfolio").select("*").eq("user_id", user_id).eq("contract_id", contract_id).execute()
     if existing.data:
@@ -16,12 +17,14 @@ def add_to_portfolio(contract_id: str, user: any = Depends(get_current_user)):
 
 @router.delete("/{contract_id}")
 def remove_from_portfolio(contract_id: str, user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = user.id
     supabase.table("portfolio").delete().eq("user_id", user_id).eq("contract_id", contract_id).execute()
     return {"message": "Removed from portfolio"}
 
 @router.get("")
 def get_portfolio(user: any = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = user.id
     response = supabase.table("portfolio").select("*, contracts(*)").eq("user_id", user_id).execute()
 

@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from database import supabase
+from database import get_supabase
 from models import LoginRequest
 from routers import contracts, portfolio
 
@@ -19,6 +19,7 @@ app.add_middleware(
 
 @app.post("/api/login")
 def handle_login(request: LoginRequest):
+    supabase = get_supabase()
     try:
         response = supabase.auth.sign_in_with_password({"email": request.email, "password": request.password})
         return {
