@@ -54,12 +54,18 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      fetchContracts();
       fetchPortfolio();
       fetchTrends();
     }
+  }, [user, token]);
+
+  useEffect(() => {
+    if (user) {
+      fetchContracts();
+    }
   }, [
     user,
+    token,
     filters,
     selectedEnergyTypes,
     minPrice,
@@ -78,7 +84,6 @@ function App() {
   }, [theme]);
 
   const fetchContracts = () => {
-    const token = useEnergyStore.getState().token;
     if (!token) return;
     const params = new URLSearchParams();
     selectedEnergyTypes.forEach((type) => params.append("energy_types", type));
@@ -100,13 +105,12 @@ function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setContracts(data);
+        setContracts(Array.isArray(data) ? data : []);
         setLoading(false);
       });
   };
 
   const fetchPortfolio = () => {
-    const token = useEnergyStore.getState().token;
     fetch("/api/portfolio", {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -115,16 +119,14 @@ function App() {
   };
 
   const fetchTrends = () => {
-    const token = useEnergyStore.getState().token;
     fetch("/api/contracts/trends", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setTrends(data));
+      .then((data) => setTrends(Array.isArray(data) ? data : []));
   };
 
   const addToPortfolio = (contractId) => {
-    const token = useEnergyStore.getState().token;
     fetch(`/api/portfolio/${contractId}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -132,7 +134,6 @@ function App() {
   };
 
   const removeFromPortfolio = (contractId) => {
-    const token = useEnergyStore.getState().token;
     fetch(`/api/portfolio/${contractId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -140,7 +141,6 @@ function App() {
   };
 
   const markContractAsSold = (contractId) => {
-    const token = useEnergyStore.getState().token;
     fetch(`/api/contracts/${contractId}/sell`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
