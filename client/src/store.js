@@ -22,10 +22,15 @@ export const useEnergyStore = create(
       sortOrder: "asc",
       comparisonList: [],
       theme: "light",
+      user: null,
+      token: null,
       toggleTheme: () =>
         set((state) => ({
           theme: state.theme === "light" ? "dark" : "light",
         })),
+      setUser: (user) => set({ user }),
+      setToken: (token) => set({ token }),
+      logout: () => set({ user: null, token: null }),
       toggleEnergyType: (type) =>
         set((state) => ({
           selectedEnergyTypes: state.selectedEnergyTypes.includes(type)

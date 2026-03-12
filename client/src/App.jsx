@@ -9,11 +9,6 @@ import ContractModal from "./components/ContractModal";
 import ComparisonModal from "./components/ComparisonModal";
 
 function App() {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("user");
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [email, setEmail] = useState("test@example.com");
   const [password, setPassword] = useState("test1234");
   const [authError, setAuthError] = useState("");
@@ -44,6 +39,11 @@ function App() {
     comparisonList,
     toggleComparison,
     clearComparison,
+    user,
+    token,
+    setUser,
+    setToken,
+    logout,
   } = useEnergyStore();
   const [filters, setFilters] = useState({
     min_quantity: "",
@@ -78,6 +78,7 @@ function App() {
   }, [theme]);
 
   const fetchContracts = () => {
+    const token = useEnergyStore.getState().token;
     if (!token) return;
     const params = new URLSearchParams();
     selectedEnergyTypes.forEach((type) => params.append("energy_types", type));
@@ -105,6 +106,7 @@ function App() {
   };
 
   const fetchPortfolio = () => {
+    const token = useEnergyStore.getState().token;
     fetch("/api/portfolio", {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -113,6 +115,7 @@ function App() {
   };
 
   const fetchTrends = () => {
+    const token = useEnergyStore.getState().token;
     fetch("/api/contracts/trends", {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -121,6 +124,7 @@ function App() {
   };
 
   const addToPortfolio = (contractId) => {
+    const token = useEnergyStore.getState().token;
     fetch(`/api/portfolio/${contractId}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -128,6 +132,7 @@ function App() {
   };
 
   const removeFromPortfolio = (contractId) => {
+    const token = useEnergyStore.getState().token;
     fetch(`/api/portfolio/${contractId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -135,6 +140,7 @@ function App() {
   };
 
   const markContractAsSold = (contractId) => {
+    const token = useEnergyStore.getState().token;
     fetch(`/api/contracts/${contractId}/sell`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -158,18 +164,9 @@ function App() {
 
       setUser(data.user);
       setToken(data.access_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("token", data.access_token);
     } catch (err) {
       setAuthError(err.message);
     }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
   };
 
   if (!user) {
