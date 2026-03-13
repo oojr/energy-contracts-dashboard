@@ -1,9 +1,44 @@
-import { Wallet, Trash2, CheckCircle2 } from "lucide-react";
+import { Wallet, Trash2, CheckCircle2, Download } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
 export default function Portfolio({ portfolio, setView, removeFromPortfolio, markContractAsSold }) {
+  const exportToCSV = () => {
+    const headers = ["ID", "Energy Type", "Location", "Quantity (MWh)", "Price per MWh", "Total Cost", "Status"];
+    const rows = portfolio.contracts.map(c => [
+      c.id,
+      `"${c.energy_type}"`,
+      `"${c.location}"`,
+      c.quantity_mwh,
+      c.price_per_mwh,
+      c.quantity_mwh * c.price_per_mwh,
+      `"${c.status || 'Active'}"`
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const fileName = `portfolio-contract-${mm}-${dd}-${yyyy}.csv`;
+
+    link.setAttribute("download", fileName);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const chartData = portfolio.metrics?.breakdown_by_type
     ? Object.entries(portfolio.metrics.breakdown_by_type).map(([name, value]) => ({
         name,
@@ -13,11 +48,22 @@ export default function Portfolio({ portfolio, setView, removeFromPortfolio, mar
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold dark:text-white">My Portfolio</h2>
-        <p className="text-gray-500 dark:text-gray-400">
-          Real-time metrics and contract management.
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold dark:text-white">My Portfolio</h2>
+          <p className="text-gray-500 dark:text-gray-400">
+            Real-time metrics and contract management.
+          </p>
+        </div>
+        {portfolio.contracts.length > 0 && (
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-emerald-700 transition-colors w-fit"
+          >
+            <Download className="w-5 h-5" />
+            Export CSV
+          </button>
+        )}
       </div>
 
       {portfolio.contracts.length === 0 ? (
